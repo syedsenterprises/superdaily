@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SuperDaily — Everyday Grocery, Delivered</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f6f4;color:#1f2937;font-family:'Inter',sans-serif}
+header{background:#d92d20;color:#fff;padding:14px 22px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.logo{font-family:'Archivo',sans-serif;font-size:26px;font-weight:800}.logo span{color:#ffd60a}
+#q{flex:1;min-width:220px;padding:12px 16px;border:0;border-radius:10px;font-size:15px}
+.cartbtn{background:#ffd60a;color:#1f2937;border:0;padding:11px 18px;border-radius:10px;font-weight:700;cursor:pointer}
+.promo{background:#ffd60a;text-align:center;padding:10px;font-weight:700}
+.wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:200px 1fr;gap:20px;padding:20px}
+.cat{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e5e5e0;padding:10px 14px;border-radius:10px;margin:5px 0;cursor:pointer;font-weight:600}
+.cat.on{background:#1f2937;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{background:#fff;border:1px solid #e5e5e0;border-radius:14px;padding:16px}
+.emoji{font-size:44px}
+.old{color:#9ca3af;text-decoration:line-through;margin-right:8px}
+.new{color:#d92d20;font-weight:800;font-size:18px}
+.add{margin-top:10px;background:#d92d20;color:#fff;border:0;padding:9px 16px;border-radius:10px;font-weight:700;cursor:pointer;width:100%}
+.drawer{position:fixed;top:0;right:0;width:360px;max-width:92vw;height:100%;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.2);padding:22px;overflow:auto;transform:translateX(110%);transition:.25s;z-index:10}
+.drawer.open{transform:none}
+.line{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #eee;align-items:center}
+.qty button{width:26px;height:26px;border-radius:50%;border:1px solid #ccc;background:#fff;cursor:pointer;font-weight:700}
+input{width:100%;padding:11px;margin:6px 0;border:1px solid #ddd;border-radius:10px;font-size:15px}
+.checkout{background:#d92d20;color:#fff;border:0;padding:13px;border-radius:10px;font-weight:700;width:100%;cursor:pointer;margin-top:12px}
+.ok{background:#e6f4ea;color:#1e5c2e;padding:14px;border-radius:12px;margin-top:12px;display:none}
+footer{text-align:center;color:#6b7280;padding:22px;font-size:13px}
+@media(max-width:700px){.wrap{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header><div class="logo">Super<span>Daily</span></div><input id="q" placeholder="Search milk, rice, snacks…" oninput="filter()"/><button class="cartbtn" onclick="toggle(true)">Cart · $<span id="t">0.00</span></button></header>
+<div class="promo">WEEKEND DEAL — Up to 40% off pantry staples · Free delivery over $30</div>
+<div class="wrap"><aside><h3>Categories</h3><div id="cats"></div></aside><section class="grid" id="g"></section></div>
+<aside class="drawer" id="drawer"><h2>Your cart <button style="float:right;border:0;background:none;font-size:20px;cursor:pointer" onclick="toggle(false)">×</button></h2>
+<div id="lines"></div><div id="sums" style="margin-top:12px"></div>
+<h3>Checkout</h3><input id="cname" placeholder="Full name"/><input id="caddr" placeholder="Delivery address"/>
+<button class="checkout" onclick="placeOrder()">Place order →</button><div class="ok" id="ok"></div></aside>
+<footer>SuperDaily · Static site — cart &amp; orders saved in your browser. No payment taken; connect a payment provider to sell for real.</footer>
+<script>
+const P=[{id:1,n:'Whole Milk 1L',p:1.79,old:2.20,c:'dairy',e:'🥛'},{id:2,n:'Basmati Rice 5kg',p:8.99,old:12.00,c:'pantry',e:'🍚'},{id:3,n:'Free-range Eggs ×12',p:3.40,c:'dairy',e:'🥚'},{id:4,n:'Sea Salt Popcorn',p:2.10,c:'snack',e:'🍿'},{id:5,n:'Orange Juice 1L',p:2.75,old:3.60,c:'drink',e:'🧃'},{id:6,n:'Pasta 500g',p:1.60,c:'pantry',e:'🍝'},{id:7,n:'Dark Chocolate 70%',p:2.90,c:'snack',e:'🍫'},{id:8,n:'Ground Coffee 250g',p:5.99,old:7.50,c:'drink',e:'☕'},{id:9,n:'Olive Oil 1L',p:9.20,c:'pantry',e:'🫒'}];
+const CATS=[['all','All items'],['dairy','Dairy & eggs'],['pantry','Pantry'],['snack','Snacks'],['drink','Drinks']];
+let cur='all',cart=JSON.parse(localStorage.getItem('sd_cart')||'{}');
+function save(){localStorage.setItem('sd_cart',JSON.stringify(cart));renderCart()}
+function cats(){document.getElementById('cats').innerHTML=CATS.map(c=>`<button class="cat ${c[0]===cur?'on':''}" onclick="cur='${c[0]}';cats();filter()">${c[1]}</button>`).join('')}
+function filter(){let q=document.getElementById('q').value.toLowerCase();document.getElementById('g').innerHTML=P.filter(x=>(cur==='all'||x.c===cur)&&x.n.toLowerCase().includes(q)).map(x=>`<div class="card"><div class="emoji">${x.e}</div><b>${x.n}</b><div>${x.old?`<span class="old">$${x.old.toFixed(2)}</span>`:''}<span class="new">$${x.p.toFixed(2)}</span></div><button class="add" onclick="add(${x.id})">Add to cart</button></div>`).join('')||'<p>No matches. Try another search.</p>'}
+function add(id){cart[id]=(cart[id]||0)+1;save()}
+function chg(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];save()}
+function renderCart(){let n=0,sub=0,html='';for(let id in cart){let x=P.find(p=>p.id==id),q=cart[id];n+=q;sub+=x.p*q;html+=`<div class="line"><span>${x.e} ${x.n}</span><span class="qty"><button onclick="chg(${id},-1)">−</button> ${q} <button onclick="chg(${id},1)">+</button></span><span>$${(x.p*q).toFixed(2)}</span></div>`}
+document.getElementById('lines').innerHTML=html||'<p>Your cart is empty.</p>';
+let del=sub===0?0:(sub>=30?0:2.99);
+document.getElementById('sums').innerHTML=`<div>Subtotal: $${sub.toFixed(2)}</div><div>Delivery: ${del===0?'FREE':'$'+del.toFixed(2)}</div><div><b>Total: $${(sub+del).toFixed(2)}</b></div>`;
+document.getElementById('t').textContent=(sub+del).toFixed(2)}
+function toggle(o){document.getElementById('drawer').classList.toggle('open',o)}
+function placeOrder(){let nm=document.getElementById('cname').value.trim(),ad=document.getElementById('caddr').value.trim();if(!nm||!ad||Object.keys(cart).length===0){alert('Add items and fill name + address first.');return}
+let ref='SD-'+Math.floor(1000+Math.random()*9000);document.getElementById('ok').style.display='block';document.getElementById('ok').innerHTML=`Order <b>${ref}</b> placed for ${nm}. Delivery to ${ad} — total $${document.getElementById('t').textContent}. (Demo checkout: no payment taken.)`;cart={};save()}
+cats();filter();renderCart();
+</script></body></html>
