@@ -26,6 +26,10 @@ input{width:100%;padding:11px;margin:6px 0;border:1px solid #ddd;border-radius:1
 .ok{background:#e6f4ea;color:#1e5c2e;padding:14px;border-radius:12px;margin-top:12px;display:none}
 footer{text-align:center;color:#6b7280;padding:22px;font-size:13px}
 @media(max-width:700px){.wrap{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,90px);background:#1f2937;color:#fff;padding:15px 20px;border-radius:999px;font-weight:600;box-shadow:0 12px 30px rgba(0,0,0,.35);transition:.3s;z-index:50;opacity:0;pointer-events:none;max-width:92vw;text-align:center}
+.toast.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.toast button{background:#d92d20;color:#fff;border:0;padding:7px 14px;border-radius:999px;margin-left:12px;cursor:pointer;font-weight:700}
+.pulse{animation:pulse .5s}@keyframes pulse{50%{transform:scale(1.12)}}
 </style></head><body>
 <header><div class="logo">Super<span>Daily</span></div><input id="q" placeholder="Search milk, rice, snacks…" oninput="filter()"/><button class="cartbtn" onclick="toggle(true)">Cart · $<span id="t">0.00</span></button></header>
 <div class="promo">WEEKEND DEAL — Up to 40% off pantry staples · Free delivery over $30</div>
@@ -35,14 +39,16 @@ footer{text-align:center;color:#6b7280;padding:22px;font-size:13px}
 <h3>Checkout</h3><input id="cname" placeholder="Full name"/><input id="caddr" placeholder="Delivery address"/>
 <button class="checkout" onclick="placeOrder()">Place order →</button><div class="ok" id="ok"></div></aside>
 <footer>SuperDaily · Static site — cart &amp; orders saved in your browser. No payment taken; connect a payment provider to sell for real.</footer>
-<script>
+<div class="toast" id="toast"></div><script>
 const P=[{id:1,n:'Whole Milk 1L',p:1.79,old:2.20,c:'dairy',e:'🥛'},{id:2,n:'Basmati Rice 5kg',p:8.99,old:12.00,c:'pantry',e:'🍚'},{id:3,n:'Free-range Eggs ×12',p:3.40,c:'dairy',e:'🥚'},{id:4,n:'Sea Salt Popcorn',p:2.10,c:'snack',e:'🍿'},{id:5,n:'Orange Juice 1L',p:2.75,old:3.60,c:'drink',e:'🧃'},{id:6,n:'Pasta 500g',p:1.60,c:'pantry',e:'🍝'},{id:7,n:'Dark Chocolate 70%',p:2.90,c:'snack',e:'🍫'},{id:8,n:'Ground Coffee 250g',p:5.99,old:7.50,c:'drink',e:'☕'},{id:9,n:'Olive Oil 1L',p:9.20,c:'pantry',e:'🫒'}];
 const CATS=[['all','All items'],['dairy','Dairy & eggs'],['pantry','Pantry'],['snack','Snacks'],['drink','Drinks']];
 let cur='all',cart=JSON.parse(localStorage.getItem('sd_cart')||'{}');
 function save(){localStorage.setItem('sd_cart',JSON.stringify(cart));renderCart()}
 function cats(){document.getElementById('cats').innerHTML=CATS.map(c=>`<button class="cat ${c[0]===cur?'on':''}" onclick="cur='${c[0]}';cats();filter()">${c[1]}</button>`).join('')}
 function filter(){let q=document.getElementById('q').value.toLowerCase();document.getElementById('g').innerHTML=P.filter(x=>(cur==='all'||x.c===cur)&&x.n.toLowerCase().includes(q)).map(x=>`<div class="card"><div class="emoji">${x.e}</div><b>${x.n}</b><div>${x.old?`<span class="old">$${x.old.toFixed(2)}</span>`:''}<span class="new">$${x.p.toFixed(2)}</span></div><button class="add" onclick="add(${x.id})">Add to cart</button></div>`).join('')||'<p>No matches. Try another search.</p>'}
-function add(id){cart[id]=(cart[id]||0)+1;save()}
+function showToast(msg){let t=document.getElementById('toast');t.innerHTML=msg+' <button onclick="toggle(true);hideToast()">View cart</button>';t.classList.add('show');let cb=document.querySelector('.cartbtn');if(cb){cb.classList.remove('pulse');void cb.offsetWidth;cb.classList.add('pulse')}clearTimeout(window._tt);window._tt=setTimeout(hideToast,3000)}
+function hideToast(){document.getElementById('toast').classList.remove('show')}
+function add(id){cart[id]=(cart[id]||0)+1;save();let x=P.find(p=>p.id==id);showToast('✓ 1 item added to cart — '+x.n)}
 function chg(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];save()}
 function renderCart(){let n=0,sub=0,html='';for(let id in cart){let x=P.find(p=>p.id==id),q=cart[id];n+=q;sub+=x.p*q;html+=`<div class="line"><span>${x.e} ${x.n}</span><span class="qty"><button onclick="chg(${id},-1)">−</button> ${q} <button onclick="chg(${id},1)">+</button></span><span>$${(x.p*q).toFixed(2)}</span></div>`}
 document.getElementById('lines').innerHTML=html||'<p>Your cart is empty.</p>';
