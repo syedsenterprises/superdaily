@@ -57,13 +57,13 @@ function chip(q){document.getElementById('chatinput').value=q;sendChat()}</scrip
 <script>
 function money(x){return x.toFixed(2)}
 let cart=JSON.parse(localStorage.getItem('sd_cart')||'{}');
-function save(){localStorage.setItem('sd_cart',JSON.stringify(cart))}
-function cnt(){return Object.values(cart).reduce((a,b)=>a+b,0)}
+function save(){cart=Object.fromEntries(Object.entries(cart).filter(([id])=>PRODS.some(p=>p.id===id)));localStorage.setItem('sd_cart',JSON.stringify(cart))}
+function cnt(){return PRODS.filter(p=>cart[p.id]).reduce((a,p)=>a+cart[p.id],0)}
 function sub(){return PRODS.filter(p=>cart[p.id]).reduce((a,p)=>a+p.price*cart[p.id],0)}
 function del(){let s=sub();return s===0?0:(s>=30?0:2.99)}
 function tot(){return sub()+del()}
 function renderCart(){let L=document.getElementById('lines');if(!L)return;
-  L.innerHTML=Object.keys(cart).length?PRODS.filter(p=>cart[p.id]).map(p=>'<div class="line"><span>'+p.name+'</span><span class="qty"><button onclick="chg(\''+p.id+'\',-1)">−</button> '+cart[p.id]+' <button onclick="chg(\''+p.id+'\',1)">+</button></span><span>$'+money(p.price*cart[p.id])+'</span></div>').join(''):'<p>Your cart is empty.</p>';
+  L.innerHTML=PRODS.filter(p=>cart[p.id]).length?PRODS.filter(p=>cart[p.id]).map(p=>'<div class="line"><span>'+p.name+'</span><span class="qty"><button onclick="chg(\''+p.id+'\',-1)">−</button> '+cart[p.id]+' <button onclick="chg(\''+p.id+'\',1)">+</button></span><span>$'+money(p.price*cart[p.id])+'</span></div>').join(''):'<p>Your cart is empty.</p>';
   document.getElementById('sums').innerHTML='<div class="line"><span>Subtotal</span><span>$'+money(sub())+'</span></div><div class="line"><span>Delivery</span><span>'+(del()===0?'FREE':'$'+money(del()))+'</span></div><div class="line"><b>Total</b><b>$'+money(tot())+'</b></div>';
   document.getElementById('checkout').innerHTML=cnt()?'<button class="btn" onclick="checkout()">Checkout →</button>':'';
   document.getElementById('n').textContent=cnt();document.getElementById('t').textContent=money(tot())}
