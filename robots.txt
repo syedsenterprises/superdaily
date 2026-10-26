@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://syedsenterprises.github.io/superdaily/sitemap.xml
